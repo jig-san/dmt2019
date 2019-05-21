@@ -53,6 +53,7 @@ def preprocess(df, train):
 
     return df
 
+
 def normalize(df, column_name):
     print("Normalizing " + column_name + " ...")
     df[column_name] = (df[column_name] - df[column_name].mean()) / df[column_name].std()
