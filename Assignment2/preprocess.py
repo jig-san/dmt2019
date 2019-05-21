@@ -39,7 +39,8 @@ def preprocess(df, train):
     todrop.append("date_time")
 
     # remove price outliers from training set
-    df = df[df["price_usd"] < 10000]
+    if train:
+        df = df[df["price_usd"] < 10000]
 
     # from the paper
     df["count_window"] = df["srch_room_count"] * max(df["srch_booking_window"]) + df["srch_booking_window"]
