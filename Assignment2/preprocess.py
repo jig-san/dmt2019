@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import random
+from itertools import accumulate
+
 
 
 def preprocess(df, train):
@@ -42,6 +44,8 @@ def preprocess(df, train):
     if train:
         df = df[df["price_usd"] < 10000]
 
+    df = normalize_query(df)
+
     # from the paper
     df["count_window"] = df["srch_room_count"] * max(df["srch_booking_window"]) + df["srch_booking_window"]
 
@@ -51,6 +55,22 @@ def preprocess(df, train):
         df = df.drop(label, axis=1)
     for n in range(1, 9):
         df = df.drop(["comp%d_inv" % n, "comp%d_rate" % n, "comp%d_rate_percent_diff" % n], axis=1)
+
+    return df
+
+
+def normalize_query(df):
+    print("Normalizing queries ...")
+
+    numeric_features = ['price_usd', 'prop_review_score', 'prop_starrating',
+                        'prop_location_score1', 'prop_location_score2']
+
+    for label in numeric_features:
+        mean = df.groupby(["srch_id", "prop_id"])[label].mean()
+
+        df[label + "_diff"] = df.groupby(["srch_id", "prop_id"])[label] - mean
+        df[label + "_diffp"] = df.groupby(["srch_id", "prop_id"])[label] / mean
+        del mean
 
     return df
 
@@ -181,7 +201,7 @@ test_original = "data/test_set_VU_DM.csv"
 # test_df = pd.read_csv(test_filename, header=0)
 # print("Loaded test: " + str(test_df.shape[0]) + " rows, " + str(test_df.shape[1]) + " columns")
 
-chunksize = 1000000
+chunksize = 1000
 i = 0
 for chunk_train in pd.read_csv(train_original, chunksize=chunksize):
     print("... Preprocessing train " + str(i) + "...")
@@ -191,7 +211,7 @@ for chunk_train in pd.read_csv(train_original, chunksize=chunksize):
     print("writing result...")
     train.to_csv("data/train/train_" + str(i) + ".csv", index=False)
     print("Finished writing to data/train_" + str(i) + ".csv")
-    del train
+    break
     i += 1
 
 i = 0
@@ -203,5 +223,12 @@ for chunk_test in pd.read_csv(test_original, chunksize=chunksize):
     print("writing result...")
     test.to_csv("data/test/test_" + str(i) + ".csv", index=False)
     print("Finished writing to data/test_" + str(i) + ".csv")
-    del test
+    break
     i += 1
+
+
+
+del train
+del test
+
+
